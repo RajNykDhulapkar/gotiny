@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/RajNykDhulapkar/gotiny/interfaces"
+	"github.com/RajNykDhulapkar/gotiny/pkg/interfaces"
 	"github.com/redis/go-redis/v9"
 )
 

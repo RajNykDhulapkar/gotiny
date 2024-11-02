@@ -1,7 +1,7 @@
 package shortener
 
 import (
-	"github.com/RajNykDhulapkar/gotiny/interfaces"
+	"github.com/RajNykDhulapkar/gotiny/pkg/interfaces"
 	"github.com/itchyny/base58-go"
 )
 

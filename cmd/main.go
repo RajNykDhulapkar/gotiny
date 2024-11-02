@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 
-	"github.com/RajNykDhulapkar/gotiny/handler"
-	"github.com/RajNykDhulapkar/gotiny/shortener"
-	"github.com/RajNykDhulapkar/gotiny/store"
+	"github.com/RajNykDhulapkar/gotiny/internals/handler"
+	"github.com/RajNykDhulapkar/gotiny/internals/shortener"
+	"github.com/RajNykDhulapkar/gotiny/internals/store"
 	"github.com/gin-gonic/gin"
 )
 

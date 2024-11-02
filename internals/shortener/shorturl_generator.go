@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/RajNykDhulapkar/gotiny/interfaces"
-	"github.com/RajNykDhulapkar/gotiny/utils"
+	"github.com/RajNykDhulapkar/gotiny/internals/utils"
+	"github.com/RajNykDhulapkar/gotiny/pkg/interfaces"
 )
 
 type Shortener struct {

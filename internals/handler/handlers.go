@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/RajNykDhulapkar/gotiny/interfaces"
+	"github.com/RajNykDhulapkar/gotiny/pkg/interfaces"
 	"github.com/gin-gonic/gin"
 )
 
