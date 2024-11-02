@@ -2,13 +2,14 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/RajNykDhulapkar/gotiny/pkg/interfaces"
 	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
-	Store     interfaces.StorageServiceInterface
+	Store     interfaces.UrlCache
 	Shortener interfaces.ShortenerInterface
 }
 
@@ -17,7 +18,7 @@ type UrlCreationRequest struct {
 	UserId  string `json:"user_id" binding:"required"`
 }
 
-func NewHandler(store interfaces.StorageServiceInterface, shortener interfaces.ShortenerInterface) interfaces.HandlerInterface {
+func NewHandler(store interfaces.UrlCache, shortener interfaces.ShortenerInterface) interfaces.HandlerInterface {
 	return &Handler{
 		Store:     store,
 		Shortener: shortener,
@@ -37,7 +38,7 @@ func (h *Handler) CreateShortURL(c *gin.Context) {
 		return
 	}
 
-	err = h.Store.SaveUrlMapping(c, shortUrl, creationRequest.LongUrl, creationRequest.UserId)
+	err = h.Store.SaveUrlMapping(c, shortUrl, creationRequest.LongUrl, 6*time.Hour)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -52,7 +53,7 @@ func (h *Handler) CreateShortURL(c *gin.Context) {
 
 func (h *Handler) HandleShortURLRedirect(c *gin.Context) {
 	shortUrl := c.Param("shortUrl")
-	initialUrl, err := h.Store.RetrieveOriginalUrl(c, shortUrl)
+	initialUrl, err := h.Store.GetOriginalUrl(c, shortUrl)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
