@@ -27,9 +27,6 @@
 *.trace
 *.prof
 
-# Dependency files for Go modules
-go.sum
-
 # IDE and editor-specific files
 .idea/
 *.swp
@@ -49,4 +46,4 @@ Thumbs.db
 .git/
 
 # valumes
-data/
+/data
