@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 	"time"
 
 	"github.com/RajNykDhulapkar/gotiny/internals/cache"
+	"github.com/RajNykDhulapkar/gotiny/internals/data"
 	"github.com/RajNykDhulapkar/gotiny/internals/handler"
 	"github.com/RajNykDhulapkar/gotiny/internals/rangeallocator"
 	"github.com/RajNykDhulapkar/gotiny/internals/shortener"
@@ -14,7 +16,7 @@ import (
 
 func main() {
 	clientConfig := &rangeallocator.ClientConfig{
-		Address:     "localhost:50051",
+		Address:     os.Getenv("RANGE_ALLOCATOR_ADDRESS"),
 		DialTimeout: 5 * time.Second,
 	}
 
@@ -24,24 +26,29 @@ func main() {
 	}
 	defer client.Close()
 
+	mongodbConfig := &data.Config{
+		URI:        os.Getenv("MONGODB_URI"),
+		Database:   os.Getenv("MONGODB_DATABASE"),
+		Collection: "urls",
+	}
+
+	repository, err := data.NewMongoRepository(mongodbConfig)
+	if err != nil {
+		log.Fatalf("Failed to create repository: %v", err)
+	}
+	defer repository.Close(context.Background())
+
 	managerConfig := &rangeallocator.RangeManagerConfig{
-		ServiceID: "url-shortener",
+		ServiceID: os.Getenv("SERVICE_ID"),
 		RangeSize: 1000,
 		Region:    "default",
 	}
 
 	manager := rangeallocator.NewRangeManager(client, managerConfig)
 
-	id, err := manager.GetNextID(context.Background())
-	if err != nil {
-		log.Fatalf("Failed to get next ID: %v", err)
-	}
-
-	log.Printf("Got next ID: %d", id)
-
 	cacheConfig := &cache.Config{
-		Address:      "localhost:6379",
-		Password:     "",
+		Address:      os.Getenv("REDIS_URL"),
+		Password:     os.Getenv("REDIS_PASSWORD"),
 		DB:           0,
 		DialTimeout:  5 * time.Second,
 		WriteTimeout: 2 * time.Second,
@@ -55,12 +62,12 @@ func main() {
 	defer redisAdapter.Close()
 
 	urlCache := cache.NewUrlCache(redisAdapter)
-	if err != nil {
-		log.Fatalf("Failed to initialize the store: %v", err)
-	}
 
-	base58Encoder := shortener.NewBase58Encoder()
-	shortenerService := shortener.NewShortener(base58Encoder)
+	shortenerConfig := &shortener.Config{
+		ServiceID: os.Getenv("SERVICE_ID"),
+		RangeSize: 1000,
+	}
+	shortenerService := shortener.NewShortener(manager, shortenerConfig)
 
 	h := handler.NewHandler(urlCache, shortenerService)
 

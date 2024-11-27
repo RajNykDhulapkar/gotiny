@@ -32,7 +32,7 @@ func (h *Handler) CreateShortURL(c *gin.Context) {
 		return
 	}
 
-	shortUrl, err := h.Shortener.GenerateShortLink(creationRequest.LongUrl, creationRequest.UserId)
+	shortUrl, err := h.Shortener.GenerateShortLink(c, creationRequest.LongUrl, creationRequest.UserId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -47,3 +47,6 @@ Thumbs.db
 
 # Git directory ignore files
 .git/
+
+# valumes
+data/

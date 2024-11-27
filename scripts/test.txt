@@ -1,0 +1,11 @@
+docker build -t gotiny . && \
+docker run -d --name gotiny --network gotiny-network \
+  -p 8080:8080 \
+  -e GOTINY_PORT=8080 \
+  -e REDIS_URL="redis:6379" \
+  -e REDIS_PASSWORD="" \
+  -e RANGE_ALLOCATOR_ADDRESS="range-allocator:50051" \
+  -e SERVICE_ID="url-shortener" \
+  -e MONGODB_URI="mongodb://mongodb:27017" \
+  -e MONGODB_DATABASE="urlshortener" \
+  gotiny
