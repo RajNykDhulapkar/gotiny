@@ -11,6 +11,7 @@ import (
 type HandlerInterface interface {
 	CreateShortURL(c *gin.Context)
 	HandleShortURLRedirect(c *gin.Context)
+	GetURLsByUserID(c *gin.Context)
 }
 
 type Base62EncoderPort interface {

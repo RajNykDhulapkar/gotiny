@@ -9,3 +9,21 @@ docker run -d --name gotiny --network gotiny-network \
   -e MONGODB_URI="mongodb://mongodb:27017" \
   -e MONGODB_DATABASE="urlshortener" \
   gotiny
+
+curl http://localhost:8080/health
+curl http://localhost:8080/urls/test123
+
+curl -X POST http://localhost:8080/create-short-url \
+  -H "Content-Type: application/json" \
+  -d '{
+    "long_url": "https://example.com/very/long/url",
+    "user_id": "test123"
+  }'
+
+export GOTINY_PORT=8080 \
+REDIS_URL="redis:6379" \
+REDIS_PASSWORD="" \
+RANGE_ALLOCATOR_ADDRESS="range-allocator:50051" \
+SERVICE_ID="url-shortener" \
+MONGODB_URI="mongodb://mongodb:27017" \
+MONGODB_DATABASE="urlshortener"

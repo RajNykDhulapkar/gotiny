@@ -1,0 +1,170 @@
+version: "3.8"
+
+services:
+  watchtower:
+    image: containrrr/watchtower:latest-dev
+    container_name: watchtower
+    command:
+      - "--label-enable"
+      - "--interval"
+      - "86400"
+      - "--cleanup"
+      - "--rolling-restart"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ~/app/.docker/config.json:/root/.docker/config.json
+    environment:
+      - DOCKER_CONFIG=/root/.docker
+      - TZ=UTC
+    networks:
+      - gotiny-network
+
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    command:
+      - "--providers.docker"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - gotiny-network
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_USER: username
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: alloc
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U username -d alloc"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gotiny-network
+    labels:
+      - "traefik.enable=false"
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    volumes:
+      - ./data/mongodb:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.stats()"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gotiny-network
+    labels:
+      - "traefik.enable=false"
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    volumes:
+      - ./data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gotiny-network
+    labels:
+      - "traefik.enable=false"
+
+  range-allocator:
+    image: registry.utho.io/bitnaysh/rajnykdhulapkar/range-allocator
+    container_name: range-allocator
+    environment:
+      RANGE_ALLOCATOR_DATABASE_URL: postgres://username:password@postgres:5432/alloc?sslmode=disable
+      RANGE_ALLOCATOR_GRPC_PORT: 50051
+      RANGE_ALLOCATOR_RANGE_DEFAULT_SIZE: 999
+      RANGE_ALLOCATOR_RANGE_MIN_SIZE: 100
+      RANGE_ALLOCATOR_RANGE_MAX_SIZE: 10000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "grpcurl",
+          "-plaintext",
+          "localhost:50051",
+          "rangeallocator.v1.RangeAllocator/GetHealth",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gotiny-network
+    labels:
+      - "traefik.enable=false"
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  gotiny:
+    image: registry.utho.io/bitnaysh/rajnykdhulapkar/gotiny
+    container_name: gotiny
+    environment:
+      GOTINY_PORT: 8080
+      REDIS_URL: redis:6379
+      REDIS_PASSWORD: ""
+      RANGE_ALLOCATOR_ADDRESS: range-allocator:50051
+      SERVICE_ID: url-shortener
+      MONGODB_URI: mongodb://mongodb:27017
+      MONGODB_DATABASE: urlshortener
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      range-allocator:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - gotiny-network
+    labels:
+      - "traefik.enable=false"
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  app:
+    image: registry.utho.io/bitnaysh/rajnykdhulapkar/gotiny-app
+    container_name: app
+    environment:
+      SHORT_URL_SERVICE_URL: "gotiny:8080"
+      NODE_ENV: "production"
+      SESSION_SECRET: "secret"
+    depends_on:
+      gotiny:
+        condition: service_healthy
+    networks:
+      - gotiny-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`gotiny.fun`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+      - "com.centurylinklabs.watchtower.enable=true"
+
+networks:
+  gotiny-network:
+    name: gotiny-network
+    driver: bridge
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:

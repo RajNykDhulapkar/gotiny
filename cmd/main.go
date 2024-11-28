@@ -69,7 +69,7 @@ func main() {
 	}
 	shortenerService := shortener.NewShortener(manager, shortenerConfig)
 
-	h := handler.NewHandler(urlCache, shortenerService)
+	h := handler.NewHandler(urlCache, shortenerService, repository)
 
 	r := gin.Default()
 
@@ -79,6 +79,7 @@ func main() {
 
 	r.POST("/create-short-url", h.CreateShortURL)
 	r.GET("/:shortUrl", h.HandleShortURLRedirect)
+	r.GET("/urls/:userId", h.GetURLsByUserID) // Add this new route
 
 	if err := r.Run(":8080"); err != nil {
 		log.Fatalf("Failed to start the web server: %v", err)
