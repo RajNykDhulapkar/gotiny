@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   watchtower:
-    image: containrrr/watchtower:latest-dev
+    image: containrrr/watchtower:i386-1.7.1
     container_name: watchtower
     command:
       - "--label-enable"
@@ -34,7 +34,7 @@ services:
       - gotiny-network
 
   postgres:
-    image: postgres:latest
+    image: postgres:17.2-alpine
     container_name: postgres
     environment:
       POSTGRES_USER: username
@@ -53,7 +53,7 @@ services:
       - "traefik.enable=false"
 
   mongodb:
-    image: mongo:latest
+    image: mongo:8.0.3-alpine
     container_name: mongodb
     volumes:
       - ./data/mongodb:/data/db
@@ -68,7 +68,7 @@ services:
       - "traefik.enable=false"
 
   redis:
-    image: redis:latest
+    image: redis:7.4.1-alpine
     container_name: redis
     volumes:
       - ./data/redis:/data
@@ -83,7 +83,7 @@ services:
       - "traefik.enable=false"
 
   range-allocator:
-    image: registry.utho.io/bitnaysh/rajnykdhulapkar/range-allocator
+    image: registry.utho.io/bitnaysh/rajnykdhulapkar/gotiny-range-allocator:main
     container_name: range-allocator
     environment:
       RANGE_ALLOCATOR_DATABASE_URL: postgres://username:password@postgres:5432/alloc?sslmode=disable
@@ -113,7 +113,7 @@ services:
       - "com.centurylinklabs.watchtower.enable=true"
 
   gotiny:
-    image: registry.utho.io/bitnaysh/rajnykdhulapkar/gotiny
+    image: registry.utho.io/bitnaysh/rajnykdhulapkar/gotiny:main
     container_name: gotiny
     environment:
       GOTINY_PORT: 8080
@@ -132,7 +132,7 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 10s
+      interval: 1h
       timeout: 5s
       retries: 3
     networks:
@@ -142,10 +142,10 @@ services:
       - "com.centurylinklabs.watchtower.enable=true"
 
   app:
-    image: registry.utho.io/bitnaysh/rajnykdhulapkar/gotiny-app
+    image: registry.utho.io/bitnaysh/rajnykdhulapkar/gotiny-app:main
     container_name: app
     environment:
-      SHORT_URL_SERVICE_URL: "gotiny:8080"
+      SHORT_URL_SERVICE_URL: "http://gotiny:8080"
       NODE_ENV: "production"
       SESSION_SECRET: "secret"
     depends_on:
